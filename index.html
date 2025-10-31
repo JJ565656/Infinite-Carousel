@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Full-Page Infinite Carousel</title>
+<style>
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+    overflow: hidden;
+    font-family: "DM Sans", sans-serif;
+  }
+
+  .carousel-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .carousel {
+    display: flex;
+    height: 100%;
+    width: max-content;
+    transition: transform 0.4s ease;
+    cursor: grab;
+  }
+
+  .carousel:active {
+    cursor: grabbing;
+  }
+
+  .slide {
+    flex: 0 0 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    color: white;
+    user-select: none;
+  }
+
+  .slide:nth-child(1) { background: #90B4D3; }
+  .slide:nth-child(2) { background: #A4978E; }
+  .slide:nth-child(3) { background: #3E3A39; }
+  .slide:nth-child(4) { background: #6A7E92; }
+  .slide:nth-child(5) { background: #E3DBCC; }
+</style>
+</head>
+<body>
+
+<div class="carousel-container">
+  <div class="carousel" id="carousel">
+    <div class="slide">01</div>
+    <div class="slide">02</div>
+    <div class="slide">03</div>
+    <div class="slide">04</div>
+    <div class="slide">05</div>
+  </div>
+</div>
+
+<script>
+const carousel = document.getElementById('carousel');
+const slides = Array.from(carousel.children);
+const total = slides.length;
+
+// Clone first and last slides for infinite looping
+const firstClone = slides[0].cloneNode(true);
+const lastClone = slides[total - 1].cloneNode(true);
+carousel.insertBefore(lastClone, slides[0]);
+carousel.appendChild(firstClone);
+
+let index = 1;
+let isDragging = false;
+let startX = 0;
+let currentTranslate = -window.innerWidth * index;
+let prevTranslate = currentTranslate;
+
+function setTransform(x) {
+  carousel.style.transform = `translateX(${x}px)`;
+}
+setTransform(currentTranslate);
+
+// Update translate position
+function moveCarousel(diff) {
+  currentTranslate = prevTranslate + diff;
+  setTransform(currentTranslate);
+}
+
+// Mouse and touch events
+function startDrag(e) {
+  isDragging = true;
+  startX = e.type.includes('mouse') ? e.pageX : e.touches[0].clientX;
+  carousel.style.transition = 'none';
+}
+
+function moveDrag(e) {
+  if (!isDragging) return;
+  const x = e.type.includes('mouse') ? e.pageX : e.touches[0].clientX;
+  const diff = x - startX;
+  moveCarousel(diff);
+}
+
+function endDrag(e) {
+  if (!isDragging) return;
+  isDragging = false;
+
+  const movedBy = currentTranslate - prevTranslate;
+
+  // Swipe threshold
+  if (movedBy < -100) index++;
+  if (movedBy > 100) index--;
+
+  slideTo(index);
+}
+
+function slideTo(i) {
+  const width = window.innerWidth;
+  carousel.style.transition = 'transform 0.4s ease';
+  currentTranslate = -width * i;
+  prevTranslate = currentTranslate;
+  setTransform(currentTranslate);
+}
+
+carousel.addEventListener('mousedown', startDrag);
+carousel.addEventListener('mousemove', moveDrag);
+carousel.addEventListener('mouseup', endDrag);
+carousel.addEventListener('mouseleave', endDrag);
+
+carousel.addEventListener('touchstart', startDrag);
+carousel.addEventListener('touchmove', moveDrag);
+carousel.addEventListener('touchend', endDrag);
+
+// Looping logic
+carousel.addEventListener('transitionend', () => {
+  if (index === 0) {
+    carousel.style.transition = 'none';
+    index = total;
+    currentTranslate = -window.innerWidth * index;
+    prevTranslate = currentTranslate;
+    setTransform(currentTranslate);
+  } else if (index === total + 1) {
+    carousel.style.transition = 'none';
+    index = 1;
+    currentTranslate = -window.innerWidth * index;
+    prevTranslate = currentTranslate;
+    setTransform(currentTranslate);
+  }
+});
+
+// Adjust when screen resizes
+window.addEventListener('resize', () => {
+  currentTranslate = -window.innerWidth * index;
+  prevTranslate = currentTranslate;
+  setTransform(currentTranslate);
+});
+</script>
+
+</body>
+</html>
